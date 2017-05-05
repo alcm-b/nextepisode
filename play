@@ -1,0 +1,21 @@
+#!/bin/sh
+
+playlist_length=1
+test "$2" -lt "3" -a "$2" -gt "1" && playlist_length=$2
+
+ls ./*mkv ./*avi | sort | grep -vf ./watched.list | head -n $playlist_length > ./playlist.m3u
+vlc --play-and-exit ./playlist.m3u &
+vlcpid=$!
+echo Player PID $vlcpid
+
+sleep 5
+
+inotifywait -m -r -e close --fromfile playlist.m3u  --outfile all-watched.list --format %w &
+loggerpid=$!
+echo Logger PID $loggerpid
+
+wait $vlcpid
+kill $loggerpid
+
+date --rfc-3339=seconds >> watch.log
+sort watch.log | uniq > watched.list
