@@ -1,21 +1,36 @@
 #!/bin/sh
 
-playlist_length=1
-test "$2" -lt "3" -a "$2" -gt "1" && playlist_length=$2
+if [ -d "$1" ] ; then
+    PLAYDIR="$1"
+else
+    last_viewed=$(find . -name watched.list -print0 | xargs -0 ls -t | head -1)
+    PLAYDIR=$(dirname $last_viewed)
+fi
 
-ls ./*mkv ./*avi | sort | grep -vf ./watched.list | head -n $playlist_length > ./playlist.m3u
+test -d "$PLAYDIR" && cd "$PLAYDIR"
+
+playlist_length=1
+test "$2" != "" && test "$2" -lt "2" -a "$2" -gt "1" && playlist_length=$2
+
+watched_log=./watched.log 
+watched_list=./watched.list 
+
+test -f "$watched_list" || watched_list=/dev/null
+ls ./*mkv ./*avi | sort | grep -vf "$watched_list" | head -n $playlist_length > ./playlist.m3u
+
 vlc --play-and-exit ./playlist.m3u &
 vlcpid=$!
 echo Player PID $vlcpid
 
-sleep 5
+# do not log the first 55 seconds
+sleep 55
 
-inotifywait -m -r -e close --fromfile playlist.m3u  --outfile all-watched.list --format %w &
+inotifywait -m -r -e close --fromfile playlist.m3u  --outfile "$watched_log" --format %w &
 loggerpid=$!
 echo Logger PID $loggerpid
 
 wait $vlcpid
 kill $loggerpid
 
-date --rfc-3339=seconds >> watch.log
-sort watch.log | uniq > watched.list
+date --rfc-3339=seconds >> "$watched_log"
+sort "$watched_log" | uniq > $watched_list
