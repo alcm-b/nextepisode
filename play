@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 if [ -d "$1" ] ; then
     PLAYDIR="$1"
@@ -15,10 +16,15 @@ test "$2" != "" && test "$2" -lt "2" -a "$2" -gt "1" && playlist_length=$2
 watched_log=./watched.log 
 watched_list=./watched.list 
 
-test -f "$watched_list" || watched_list=/dev/null
-ls ./*mkv ./*avi | sort | grep -vf "$watched_list" | head -n $playlist_length > ./playlist.m3u
+if [ -f "$watched_list" ] ; then
+    grep_watched_list="$watched_list"
+else
+    grep_watched_list=/dev/null
+fi
 
-vlc --play-and-exit ./playlist.m3u &
+ls ./*m4v ./*mkv ./*avi | sort | grep -vf "$grep_watched_list" | head -n $playlist_length > ./playlist.m3u
+
+vlc --fullscreen --play-and-exit ./playlist.m3u &
 vlcpid=$!
 echo Player PID $vlcpid
 
