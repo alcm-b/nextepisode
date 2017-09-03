@@ -5,7 +5,7 @@ if [ -d "$1" ] ; then
     PLAYDIR="$1"
 else
     last_viewed=$(find . -maxdepth 2 -name watched.list -print0 | xargs -0 ls -t | head -1)
-    PLAYDIR=$(dirname $last_viewed)
+    PLAYDIR=$(dirname "$last_viewed")
 fi
 
 test -d "$PLAYDIR" && cd "$PLAYDIR"
